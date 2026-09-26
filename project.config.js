@@ -1,7 +1,7 @@
 module.exports = {
   port: 3914,
   title: '传统木偶戏班偶头与巡演装箱API',
-  description: '维护偶头、服装配件、修补流转、巡演装箱和返场缺损追踪。',
+  description: '维护偶头、服装配件、修补流转、巡演装箱、返场缺损追踪和巡演结清。',
   collections: {
     puppetHeads: {
       label: '偶头档案',
@@ -38,6 +38,20 @@ module.exports = {
       statuses: ['待处理', '修复中', '已补齐', '确认为遗失'],
       required: ['tourBoxId', 'itemType', 'itemName', 'problem'],
       titleFields: ['itemName', 'problem']
+    },
+    tourSettlements: {
+      label: '巡演结清单',
+      defaultStatus: '待核对',
+      statuses: ['待核对', '待确认', '已结清'],
+      required: ['tourBoxId', 'deposit'],
+      titleFields: ['showName', 'tourBoxId']
+    },
+    ledgerEntries: {
+      label: '结清账目',
+      defaultStatus: '已入账',
+      statuses: ['已入账'],
+      required: ['settlementId', 'tourBoxId', 'refundAmount'],
+      titleFields: ['showName', 'settlementId']
     }
   },
   seed: [
@@ -66,11 +80,42 @@ module.exports = {
         play: '火焰山',
         boxNo: '配件箱-02'
       }
+    },
+    {
+      collection: 'tourBoxes',
+      id: 'box-seed-1',
+      status: '返场清点中',
+      data: {
+        showName: '火焰山巡演·泉州站',
+        venue: '泉州影剧院',
+        play: '火焰山',
+        headIds: ['head-seed-1'],
+        accessoryIds: ['accessory-seed-1'],
+        sessions: 3
+      },
+      note: '巡演结束返场，待结清'
+    },
+    {
+      collection: 'lossReports',
+      id: 'loss-seed-1',
+      status: '待处理',
+      data: {
+        tourBoxId: 'box-seed-1',
+        itemType: '偶头',
+        itemName: '武生偶头',
+        problem: '返场发现左颊掉彩加深',
+        compensation: 800
+      },
+      note: '破损赔偿待处理'
     }
   ],
   examples: [
     'GET /api/puppetHeads?play=火焰山&status=可演出 查询某剧目可用偶头',
     'POST /api/tourBoxes 创建巡演装箱单',
-    'POST /api/lossReports 登记返场缺损或遗失'
+    'POST /api/lossReports 登记返场缺损或遗失',
+    'POST /api/settlements 创建巡演结清单（一场装箱只留一份未结清）',
+    'POST /api/settlements/:id/verify 核对场次、票款、场租、运输费和赔偿，算出应退金额',
+    'GET /api/settlements/pending 查看待核区',
+    'POST /api/settlements/:id/confirm 另一位保管员确认后结清入账'
   ]
 };
